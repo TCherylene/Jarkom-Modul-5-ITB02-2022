@@ -43,25 +43,196 @@ Pembuatan topologi dengan keterangan:
 Topologi yang telah dibuat:
 <!-- Monggo kim -->
 
+
 ## Subnetting
 
 ### Pembagian Subnet
 
+![topologi](https://cdn.discordapp.com/attachments/873077363796230156/1051150276737912942/image.png)
+
 ### Pohon Subnet
 
+![pohon subnet](https://media.discordapp.net/attachments/873077363796230156/1051153888557924462/image.png?width=542&height=465)
+
 ### Tabel Subnet
+
+![tabel subnet](https://media.discordapp.net/attachments/873077363796230156/1051150569756176425/image.png?width=650&height=164)
 
 ## Konfigurasi GNS3
 
 ### Masing-masing Node
 
+#### [Strix]
+`auto eth0
+iface eth0 inet dhcp
+
+auto eth1
+iface eth1 inet static
+	address 192.215.7.149
+	netmask 255.255.255.252
+
+auto eth2
+iface eth2 inet static
+	address 192.215.7.145
+	netmask 255.255.255.252`
+
+#### [Westalis]
+`auto eth0
+iface eth0 inet static
+	address 192.215.7.129
+	netmask 255.255.255.248
+auto eth1
+iface eth1 inet static
+	address 192.215.7.1
+	netmask 255.255.255.128
+auto eth2
+iface eth2 inet static
+	address 192.215.0.1
+	netmask 255.255.252.0
+auto eth3
+iface eth3 inet static
+	address 192.215.7.146
+	netmask 255.255.255.252`
+
+#### [Ostania]
+`auto eth0
+iface eth0 inet static
+	address 192.215.7.150
+	netmask 255.255.255.252
+auto eth1
+iface eth1 inet static
+	address 192.215.6.1
+	netmask 255.255.255.0
+auto eth2
+iface eth2 inet static
+	address  192.215.4.1
+	netmask 255.255.254.0
+auto eth3
+iface eth3 inet static
+	address  192.215.7.137
+	netmask 255.255.255.148`
+
+#### [Forger, Desmond, Briar, Blackbell]
+`auto eth0
+iface eth0 inet dhcp`
+
+#### [Eden]
+`auto eth0
+iface eth0 inet static
+	address 192.215.7.130
+	netmask 255.255.255.248
+        gateway 192.215.7.129`
+
+#### [Wise]
+`auto eth0
+iface eth0 inet static
+	address 192.215.7.131
+	netmask 255.255.255.248
+        gateway 192.215.7.129`
+
+#### [Garden]
+`auto eth0
+iface eth0 inet static
+	address 192.215.7.138
+	netmask 255.255.255.248
+        gateway 192.215.7.137`
+
+#### [SSS]
+`auto eth0
+iface eth0 inet static
+	address 192.215.7.139
+	netmask 255.255.255.248
+        gateway 192.215.7.137`
+
+
 ### DNS, Web Server, DHCP Relay, DHCP Server
+
+`iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE -s 192.215.0.0/16
+
+echo nameserver 192.168.122.1 > /etc/resolv.conf`
+
 
 ### Konfigurasi Ostania & Westalis - DHCP Relay
 
+`apt update
+apt install isc-dhcp-relay -y
+echo 'SERVERS="192.215.7.131"INTERFACES="eth2 eth3 eth1 eth0"OPTIONS=""' > /etc/default/isc-dhcp-relay
+service isc-dhcp-relay restart`
+
+![image](https://media.discordapp.net/attachments/873077363796230156/1051157683568381973/image.png?width=565&height=455)
+
 ### Konfigurasi WISE - DHCP Server
 
+`edit file  >/etc/default/isc-dhcp-server
+apt update
+apt install isc-dhcp-server -y
+echo "INTERFACES=\"eth0\"" > /etc/default/isc-dhcp-server`
+
+`Edit >File /etc/dhcp/dhcpd.conf
+echo “
+ddns-update-style none;
+option domain-name "example.org";
+option domain-name-servers ns1.example.org, ns2.example.org;
+default-lease-time 600;
+max-lease-time 7200;
+log-facility local7;
+subnet 192.215.0.0 netmask 255.255.252.0 {
+    range 192.215.0.2 192.215.3.254;
+    option routers 192.215.0.1;
+    option broadcast-address 192.215.3.255;
+    option domain-name-servers 192.215.7.130;
+    default-lease-time 360;
+    max-lease-time 7200;
+}
+subnet 192.215.7.0 netmask 255.255.255.128 {
+    range 192.215.7.2 192.215.7.126;
+    option routers 192.215.7.1;
+    option broadcast-address 192.215.7.127;
+    option domain-name-servers 192.215.7.130;
+    default-lease-time 720;
+    max-lease-time 7200;
+}
+subnet 192.215.4.0 netmask 255.255.254.0 {
+    range 192.215.4.2 192.215.5.254;
+    option routers 192.215.4.1;
+    option broadcast-address 192.215.5.255;
+    option domain-name-servers 192.215.7.130;
+    default-lease-time 720;
+    max-lease-time 7200;
+}
+subnet 192.215.6.0 netmask 255.255.255.0 {
+    range 192.215.6.2 192.215.6.254;
+    option routers 192.215.6.1;
+    option broadcast-address 192.215.6.255;
+    option domain-name-servers 192.215.7.130;
+    default-lease-time 720;
+    max-lease-time 7200;
+}
+subnet 192.215.7.128 netmask 255.255.255.248 {}
+subnet 192.215.7.144 netmask 255.255.255.252 {}
+subnet 192.215.7.148 netmask 255.255.255.252 {}
+subnet 192.215.7.136 netmask 255.255.255.248 {}” >File /etc/dhcp/dhcpd.conf`
+
+`service isc-dhcp-server restart`
+
 ### Konfigurasi Eden - DNS SERVER
+
+`apt-get install bind9 -y
+
+echo "
+options {
+        directory \"/var/cache/bind\";
+        forwarders {
+                192.168.122.1;
+        };
+        allow-query{any;};
+        auth-nxdomain no;
+        listen-on-v6 { any; };
+};
+
+" > /etc/bind/named.conf.options`
+
+`service bind9 restart`
 
 ## Routing
 
